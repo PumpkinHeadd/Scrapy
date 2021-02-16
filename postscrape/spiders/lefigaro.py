@@ -1,4 +1,5 @@
 import scrapy
+import json
 
 
 class LefigaroSpider(scrapy.Spider):
@@ -12,20 +13,27 @@ class LefigaroSpider(scrapy.Spider):
         matchs = response.xpath('//div[@class="s24ls-bloc__body"]').extract()
         sum_matchs = len(matchs)
 
-        status  = response.xpath('//span[@class="s24ls-bloc__status"]/text()').extract()
-        teams   = response.xpath('//span[@class="s24ls-bloc__team"]/text()').extract()
-        results = response.xpath('//span[@class="s24ls-bloc__result"]/text()').extract()
+        status  = response.xpath('//span[@class="s24ls-bloc__status"]/text()').extract() # OK
+        teams   = response.xpath('//span[@class="s24ls-bloc__team"]/text()').extract() # OK
+        results = response.xpath('//i[@class="s24ls-bloc__result"]/text()').extract()
 
-        print(status[5])
+        print(teams)
 
         tab = [sum_matchs]
 
-        for i in range (0, sum_matchs) :
-            print(i)
-            #tab[i]["status"]  = status[i-1]
-            #tab[i]["team1"]   = teams[i-1]
-            #tab[i]["team2"]   = teams[i]
-            #tab[i]["result1"] = results[i-1]
-            #tab[i]["result2"] = results[i]
+        j = k = 0
 
-            #print("status": , "team1": teams[i-1], "team1": teams[i], "result1": results[i-1], "result2": results[i])
+        for i in range (0, sum_matchs) :
+            line = {} # ligne courante = dictionnaire
+
+            line["status"]  = status[i].strip()
+
+            line["team1"]   = teams[j]
+            line["team2"]   = teams[j+1]
+            j += 2
+
+            line["result1"] = results[k]
+            line["result2"] = results[k+2]
+            k += 3
+
+            print(json.dumps(line))
