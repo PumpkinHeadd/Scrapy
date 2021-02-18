@@ -1,39 +1,51 @@
 import scrapy
 import json
 
-
 class LefigaroSpider(scrapy.Spider):
     name = 'lefigaro'
     #allowed_domains = ['sport24.lefigaro.fr']
-    start_urls = ['https://sport24.lefigaro.fr/football/ligue-1/24/2020/calendrier-resultats?journee=1']
+    start_urls = [
+        'https://sport24.lefigaro.fr/football/ligue-1/24/2020/calendrier-resultats',
+    ]
+
+    def buildStartUrls(self, response):
+        """Fonction chargée de récupérer les URL des résultats sportifs de toute une saison"""
+
+        # Le dernier nb matché correspond à la dernière journée en cours de la compétition
+        max = response.xpath('//h1//span/text()').re(r"[1-9][0-9]?")
+        start_url = self.start_urls[0]
+        self.start_urls = []
+
+        for i in range(1, int(max[-1])) :
+            self.start_urls.append(start_url + '?journee='+ str(i))
 
     def parse(self, response):
         """Main function that parses the pages"""
 
-        matchs = response.xpath('//div[@class="s24ls-bloc__body"]').extract()
-        sum_matchs = len(matchs)
+        self.buildStartUrls(response)
 
-        status  = response.xpath('//span[@class="s24ls-bloc__status"]/text()').extract() # OK
-        teams   = response.xpath('//span[@class="s24ls-bloc__team"]/text()').extract() # OK
-        results = response.xpath('//i[@class="s24ls-bloc__result"]/text()').extract()
+        results1 = response.xpath('//div[@class="s24ls-bloc__body"]//div//i[1]/text()').extract()
+        results2 = response.xpath('//div[@class="s24ls-bloc__body"]//div//i[3]/text()').extract()
 
-        print(teams)
+        teams1   = response.xpath('//div[@class="s24ls-bloc__body"]//div[2]//span/text()').extract()
+        teams2   = response.xpath('//div[@class="s24ls-bloc__body"]//div[4]//span/text()').extract()
 
-        tab = [sum_matchs]
+        status   = response.xpath('//span[@class="s24ls-bloc__status"]/text()').extract() # OK
 
-        j = k = 0
+        print(json.dumps(results1))
+        print(json.dumps(self.start_urls))
 
-        for i in range (0, sum_matchs) :
+        # Pages * enregistrements par page
+        tab = [len(status)]
+        for i in range (0, len(status)) :
             line = {} # ligne courante = dictionnaire
 
             line["status"]  = status[i].strip()
 
-            line["team1"]   = teams[j]
-            line["team2"]   = teams[j+1]
-            j += 2
+            line["team1"]   = teams1[i]
+            line["team2"]   = teams2[i]
 
-            line["result1"] = results[k]
-            line["result2"] = results[k+2]
-            k += 3
+            line["result1"] = results1[i]
+            line["result2"] = results2[i]
 
             print(json.dumps(line))
